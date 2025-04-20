@@ -2,22 +2,27 @@ import React, {useEffect, useState} from 'react'
 import Search from "./components/Search.jsx";
 import Spinner from "./components/Spinner.jsx";
 import MovieCard from "./components/MovieCard.jsx";
+import {useDebounce} from "react-use";
 
 const API_BASE_URL = "https://api.themoviedb.org/3";
-const API_KEY = import.meta.env.VITE_API_KEY;
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const API_OPTIONS = {
     method: 'GET',
     headers: {
         accept: 'application/json',
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmMDliYTFhYjA2MGExMDI5YjNlMzYxZjJiZmM5ZTZlYSIsIm5iZiI6MTcxNjMzMDYyNi42OTI5OTk4LCJzdWIiOiI2NjRkMjA4MjliZmU5NmIzNTU5MGFjMDUiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.I3Ez8zzTpBgu2i2tffKNvlpN_ZRD6C9S5lHeYdeXZgY'
+        Authorization: `Bearer ${API_KEY}`
     }
 }
 
 const App = () => {
+    console.log('API_KEY from env:', import.meta.env.VITE_TMDB_API_KEY);
     const [searchTerm, setSearchTerm] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [movieList, setMovieList] = useState([]);
-    const [isLoading, setIsLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(false);
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+    useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
     const fetchMovies = async (query = '') => {
         setIsLoading(true);
@@ -25,7 +30,7 @@ const App = () => {
         try {
             const endpoint = query
                 ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
-                :`${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+                : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
             const response = await fetch(endpoint, API_OPTIONS);
 
             if (!response) {
@@ -50,8 +55,8 @@ const App = () => {
     }
 
     useEffect(() => {
-        fetchMovies(searchTerm);
-    }, [searchTerm]);
+        fetchMovies(debouncedSearchTerm);
+    }, [debouncedSearchTerm]);
 
     return (
         <main>
